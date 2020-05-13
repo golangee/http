@@ -1,4 +1,4 @@
-# http [![GoDoc](https://godoc.org/github.com/golangee/http?status.svg)]
+# http [![GoDoc](https://godoc.org/github.com/golangee/http?status.svg)](http://godoc.org/github.com/golangee/http)  
 build restful services with absolute minimum amount of code using annotations.
 
 ## usage example
@@ -40,11 +40,11 @@ func (s *RestController) Get(ctx context.Context, id uuid.UUID, userAgent string
 Regenerate *reflectplus* and start the server
 ```go
     srv := http.NewServer()
-
-	ctr, err := http2.NewController(srv, sms.NewRestController(...))
-	if err != nil {
-		panic(err)
-	}
-
-	err = srv.Start(8080)
+    
+    ctr, err := http2.NewController(srv, sms.NewRestController(...))
+    if err != nil {
+        panic(err)
+    }
+    
+    err = srv.Start(8080)
 ```
