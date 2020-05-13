@@ -35,6 +35,10 @@ func (p Params) ByName(name string) string {
 	return ""
 }
 
+type KeyValues interface {
+	ByName(name string) string
+}
+
 // wrapRouterParams is an implementation abstraction firewall against the used router implementation
 func wrapRouterParams(params httprouter.Params) Params {
 	r := make([]Param, len(params), len(params))
@@ -44,4 +48,4 @@ func wrapRouterParams(params httprouter.Params) Params {
 	return r
 }
 
-type Handler func(writer http.ResponseWriter, request *http.Request, params Params) error
+type Handler func(writer http.ResponseWriter, request *http.Request, params KeyValues) error

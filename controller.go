@@ -100,7 +100,7 @@ func NewController(srv *Server, ctr interface{}) (*Controller, error) {
 					path := joinPaths(prefixRoute, route)
 
 					fmt.Printf("registered route %s %s by %s \n", method.Name, path, reflectplus.PositionalError(method, nil).Error())
-					srv.handle(verb, path, func(writer http.ResponseWriter, request *http.Request, params Params) error {
+					srv.handle(verb, path, func(writer http.ResponseWriter, request *http.Request, params KeyValues) error {
 						return routedFunc(method, refFunc, methodParams, writer, request, params)
 					})
 
@@ -113,7 +113,7 @@ func NewController(srv *Server, ctr interface{}) (*Controller, error) {
 	return nil, nil
 }
 
-func routedFunc(method reflectplus.Method, refFunc reflect.Value, methodParams []methodParam, writer http.ResponseWriter, request *http.Request, params Params) error {
+func routedFunc(method reflectplus.Method, refFunc reflect.Value, methodParams []methodParam, writer http.ResponseWriter, request *http.Request, params KeyValues) error {
 	args := make([]reflect.Value, 0, len(method.Params))
 
 	fmt.Println(method.Name)
