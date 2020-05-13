@@ -35,7 +35,7 @@ func (p Params) ByName(name string) string {
 	return ""
 }
 
-type KeyValues interface {
+type KeyValues = interface {
 	ByName(name string) string
 }
 
@@ -48,4 +48,4 @@ func wrapRouterParams(params httprouter.Params) Params {
 	return r
 }
 
-type Handler func(writer http.ResponseWriter, request *http.Request, params KeyValues) error
+type Handler = func(writer http.ResponseWriter, request *http.Request, params KeyValues) error

@@ -1,4 +1,4 @@
+github.com/golangee/reflectplus v0.0.0-20200513144911-798e9138942b h1:OvlsN5RJ22OuivWUY9bR4UhoggCruEAbneCABg1bGtM=
+github.com/golangee/reflectplus v0.0.0-20200513144911-798e9138942b/go.mod h1:dgXreSWiXlgoYHeYpjMSXL724WpmCOshQnUNNCaz83k=
 github.com/julienschmidt/httprouter v1.3.0 h1:U0609e9tgbseu3rBINet9P48AI/D3oJs4dN7jwJOQ1U=
 github.com/julienschmidt/httprouter v1.3.0/go.mod h1:JR6WtHb+2LUe8TCKY3cZOxFyyO8IZAc4RVcycCCAKdM=
-github.com/worldiety/reflectplus v0.0.0-20200513132612-81a9dedaa2bf h1:zUyKuUdZWNgt0e+1H2MUBMf3z5My4GLjYlxHy/phiY0=
-github.com/worldiety/reflectplus v0.0.0-20200513132612-81a9dedaa2bf/go.mod h1:AsuPqRC3qumD/5IMPF9oOl3hzG7WszDGvJ6cFCllhi0=

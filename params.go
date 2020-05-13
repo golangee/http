@@ -16,7 +16,7 @@ package http
 
 import (
 	"fmt"
-	"github.com/worldiety/reflectplus"
+	"github.com/golangee/reflectplus"
 	"regexp"
 )
 
