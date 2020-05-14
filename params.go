@@ -20,8 +20,6 @@ import (
 	"regexp"
 )
 
-
-
 var regexParamNames = regexp.MustCompile(":\\w+")
 
 type paramType int
@@ -73,9 +71,9 @@ func scanMethodParams(parent reflectplus.Struct, method reflectplus.Method) ([]m
 	}
 
 	// collect prefix route variables from parent
-	for _, p := range parent.FindAnnotations(AnnotationRoute) {
+	for _, p := range parent.GetAnnotations().FindAll(AnnotationRoute) {
 		// collect postfix route variables from method
-		for _, a := range method.FindAnnotations(AnnotationRoute) {
+		for _, a := range method.GetAnnotations().FindAll(AnnotationRoute) {
 			actualRoute := joinPaths(p.Value(), a.Value())
 			if len(actualRoute) == 0 {
 				return nil, fmt.Errorf("method has an empty route")
@@ -94,7 +92,7 @@ func scanMethodParams(parent reflectplus.Struct, method reflectplus.Method) ([]m
 	}
 
 	// collect query params
-	for _, a := range method.FindAnnotations(AnnotationQueryParam) {
+	for _, a := range method.GetAnnotations().FindAll(AnnotationQueryParam) {
 		name := a.Value()
 		if len(name) == 0 {
 			return nil, fmt.Errorf("value of '%s' must not be empty", AnnotationQueryParam)
@@ -112,7 +110,7 @@ func scanMethodParams(parent reflectplus.Struct, method reflectplus.Method) ([]m
 	}
 
 	// collect header params
-	for _, a := range method.FindAnnotations(AnnotationHeaderParam) {
+	for _, a := range method.GetAnnotations().FindAll(AnnotationHeaderParam) {
 		name := a.Value()
 		if len(name) == 0 {
 			return nil, fmt.Errorf("value of '%s' must not be empty", AnnotationHeaderParam)
