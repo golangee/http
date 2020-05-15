@@ -25,13 +25,15 @@ var regexParamNames = regexp.MustCompile(":\\w+")
 type paramType int
 
 const (
-	ptUnknown paramType = 0
-	ptCtx               = 1
-	ptPath              = 2
-	ptQuery             = 3
-	ptHeader            = 4
-	ptForm              = 5
-	ptBody              = 6
+	ptUnknown        paramType = 0
+	ptCtx                      = 1
+	ptPath                     = 2
+	ptQuery                    = 3
+	ptHeader                   = 4
+	ptForm                     = 5
+	ptBody                     = 6
+	ptRequest                  = 7
+	ptResponseWriter           = 8
 )
 
 type methodParam struct {
@@ -60,11 +62,25 @@ func scanMethodParams(parent reflectplus.Struct, method reflectplus.Method) ([]m
 
 	var res []methodParam
 
-	// pick up the context
+	// pick up hardcoded injection parameter
 	for _, p := range method.Params {
 		if p.Type.ImportPath == "context" && p.Type.Identifier == "Context" {
 			tmp := paramsToDefine[p.Name]
 			tmp.paramType = ptCtx
+			res = append(res, tmp)
+			delete(paramsToDefine, p.Name)
+		}
+
+		if p.Type.ImportPath == "net/http" && p.Type.Identifier == "ResponseWriter" {
+			tmp := paramsToDefine[p.Name]
+			tmp.paramType = ptResponseWriter
+			res = append(res, tmp)
+			delete(paramsToDefine, p.Name)
+		}
+
+		if p.Type.ImportPath == "net/http" && p.Type.Identifier == "Request" && p.Type.Stars == 1 {
+			tmp := paramsToDefine[p.Name]
+			tmp.paramType = ptRequest
 			res = append(res, tmp)
 			delete(paramsToDefine, p.Name)
 		}

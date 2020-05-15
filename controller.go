@@ -70,14 +70,6 @@ func NewController(srv *Server, ctr interface{}) (*Controller, error) {
 			routes = append(routes, "/")
 		}
 
-		if len(method.Params) == 0 {
-			return nil, reflectplus.PositionalError(method, fmt.Errorf("first parameter must be (ctx context.Context)"))
-		}
-
-		if !(method.Params[0].Type.ImportPath == "context" && method.Params[0].Type.Identifier == "Context") {
-			return nil, reflectplus.PositionalError(method, fmt.Errorf("first parameter must be (ctx context.Context) and not '%s#%s'", method.Params[0].Type.ImportPath, method.Params[0].Type.Identifier))
-		}
-
 		var refFunc reflect.Value
 		for i := 0; i < vtype.NumMethod(); i++ {
 			if vtype.Type().Method(i).Name == method.Name {
@@ -143,6 +135,10 @@ func routedFunc(method reflectplus.Method, refFunc reflect.Value, methodParams [
 				return err
 			}
 			args = append(args, reflect.ValueOf(parsedType))
+		case ptRequest:
+			args = append(args, reflect.ValueOf(request))
+		case ptResponseWriter:
+			args = append(args, reflect.ValueOf(writer))
 		default:
 			panic("method parameter type " + strconv.Itoa(int(p.paramType)) + " not implemented")
 		}
