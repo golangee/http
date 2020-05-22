@@ -34,6 +34,15 @@ type Controller struct {
 	methods map[string]reflectplus.InvocationHandler
 }
 
+// MustNewController asserts that ctr is useful controller and otherwise bails out.
+func MustNewController(srv *Server, ctr interface{}) *Controller {
+	c, err := NewController(srv, ctr)
+	if err != nil {
+		panic(err)
+	}
+	return c
+}
+
 // NewController tries to create a http/rest presentation service/controller/layer from the given instance.
 func NewController(srv *Server, ctr interface{}) (*Controller, error) {
 	rtype := reflect.TypeOf(ctr)

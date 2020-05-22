@@ -53,3 +53,12 @@ func (s *Server) handle(method, path string, handle Handler) {
 func (s *Server) Start(port int) error {
 	return http.ListenAndServe(":"+strconv.Itoa(port), s.routes)
 }
+
+func (s *Server) SetNotFound(handler http.Handler){
+	s.routes.NotFound = handler
+}
+
+// Handler returns the internal handler
+func (s *Server) Handler() http.Handler {
+	return s.routes
+}
