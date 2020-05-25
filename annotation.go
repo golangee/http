@@ -30,3 +30,7 @@ const AnnotationMethod = "ee.http.Method"
 //   /api/v1/sms/:id
 //   /resource/:kind1/:kind2
 const AnnotationRoute = "ee.http.Route"
+
+// AnnotationStereotypeController is a non http annotation used to group OpenAPI endpoints together, using the given
+// name.
+const AnnotationStereotypeController = "ee.stereotype.Controller"
