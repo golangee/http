@@ -36,6 +36,11 @@ func (s *Server) Use(middleware func(Handler) Handler) {
 	s.middleware = append(s.middleware, middleware)
 }
 
+// Handle provides a custom handler
+func (s *Server) Handle(method, path string, handle Handler) {
+	s.handle(method, path, handle)
+}
+
 func (s *Server) handle(method, path string, handle Handler) {
 	s.routes.Handle(method, path, func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		myHandler := handle
@@ -54,7 +59,7 @@ func (s *Server) Start(port int) error {
 	return http.ListenAndServe(":"+strconv.Itoa(port), s.routes)
 }
 
-func (s *Server) SetNotFound(handler http.Handler){
+func (s *Server) SetNotFound(handler http.Handler) {
 	s.routes.NotFound = handler
 }
 
