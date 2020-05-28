@@ -18,7 +18,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	v3 "github.com/golangee/openapi/v3"
 	"github.com/golangee/reflectplus"
 	"net/http"
 	"reflect"
@@ -32,7 +31,6 @@ type Scanner interface {
 }
 
 type Controller struct {
-	doc *v3.Document
 }
 
 // MustNewController asserts that ctr is useful controller and otherwise bails out.
@@ -46,8 +44,7 @@ func MustNewController(srv *Server, ctr interface{}) *Controller {
 
 // NewController tries to create a http/rest presentation service/controller/layer from the given instance.
 func NewController(srv *Server, ctr interface{}) (*Controller, error) {
-	doc := v3.NewDocument()
-	res := &Controller{doc: &doc}
+	res := &Controller{}
 
 	rtype := reflect.TypeOf(ctr)
 	if rtype.Kind() == reflect.Ptr {
@@ -62,12 +59,6 @@ func NewController(srv *Server, ctr interface{}) (*Controller, error) {
 	meta, ok := s.(*reflectplus.Struct)
 	if !ok {
 		return nil, fmt.Errorf("%v must be a struct but is %v", rtype, reflect.TypeOf(s))
-	}
-
-	stereotypeCtr := meta.GetAnnotations().FindFirst(AnnotationStereotypeController)
-	oaiGroupTag := ""
-	if stereotypeCtr != nil {
-		oaiGroupTag = stereotypeCtr.Value()
 	}
 
 	prefixRoutes := httpRoutes(meta.Annotations)
@@ -109,12 +100,6 @@ func NewController(srv *Server, ctr interface{}) (*Controller, error) {
 			for _, route := range routes {
 				for _, verb := range verbs {
 					path := joinPaths(prefixRoute, route)
-					oasPath := pathVarsToOASPath(path)
-
-					item := newPathDoc(res.doc, verb, path,oaiGroupTag, method, methodParams)
-
-					res.doc.Paths[oasPath] = item
-
 
 					fmt.Printf("registered route %s %s by %s \n", method.Name, path, reflectplus.PositionalError(method, nil).Error())
 					srv.handle(verb, path, func(writer http.ResponseWriter, request *http.Request, params KeyValues) error {

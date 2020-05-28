@@ -22,6 +22,82 @@ import (
 	"strings"
 )
 
+// MakeDoc tries to generate the OpenAPI documentation from all given controller structs
+func MakeDoc(doc *v3.Document, controllers []reflectplus.Struct) error {
+	if doc.Components == nil {
+		doc.Components = &v3.Components{}
+	}
+
+	if doc.Components.Schemas == nil {
+		doc.Components.Schemas = map[string]v3.Schema{}
+	}
+
+	for _, ctr := range controllers {
+		if !reflectplus.Annotations(ctr.Annotations).Has(AnnotationStereotypeController) {
+			continue
+		}
+
+		err := makeDocController(doc, ctr)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// makeDocController is partially a copy paste but we want that generation without actual go types, just based on
+// our parser reflect data and not really only at runtime.
+func makeDocController(doc *v3.Document, meta reflectplus.Struct) error {
+	prefixRoutes := httpRoutes(meta.Annotations)
+
+	stereotypeCtr := meta.GetAnnotations().FindFirst(AnnotationStereotypeController)
+	oaiGroupTag := ""
+	if stereotypeCtr != nil {
+		oaiGroupTag = stereotypeCtr.Value()
+	}
+
+	for _, m := range meta.Methods {
+		method := m
+		verbs := httpMethods(method.Annotations)
+		routes := httpRoutes(method.Annotations)
+
+		if len(verbs) == 0 {
+			continue
+		}
+
+		if len(routes) == 0 && len(prefixRoutes) == 0 {
+			continue
+		}
+
+		if len(routes) == 0 {
+			routes = append(routes, "/")
+		}
+
+		methodParams, err := scanMethodParams(meta, method)
+		if err != nil {
+			return reflectplus.PositionalError(method, err)
+		}
+
+		for _, prefixRoute := range prefixRoutes {
+			for _, route := range routes {
+				for _, verb := range verbs {
+					path := joinPaths(prefixRoute, route)
+					oasPath := pathVarsToOASPath(path)
+
+					item := newPathDoc(doc, verb, path, oaiGroupTag, method, methodParams)
+
+					doc.Paths[oasPath] = item
+
+				}
+			}
+		}
+
+	}
+
+	return nil
+}
+
 func pathVarsToOASPath(path string) string {
 	return regexParamNames.ReplaceAllStringFunc(string(path), func(s string) string {
 		return "{" + s[1:] + "}"
@@ -78,7 +154,15 @@ func newPathDoc(doc *v3.Document, verb, path string, tag string, method reflectp
 
 	switch strings.ToUpper(verb) {
 	case "GET":
-		item.Get = op
+		item.Get = &op
+	case "DELETE":
+		item.Delete = &op
+	case "PATCH":
+		item.Patch = &op
+	case "POST":
+		item.Post = &op
+	case "PUT":
+		item.Put = &op
 	default:
 		panic("verb not implemented " + verb)
 	}
@@ -181,26 +265,4 @@ func uniqueShortId(doc *v3.Document, importPath, id string) string {
 		i++
 	}
 	return shortId
-}
-
-// OpenAPI inserts its specification into the given document
-func (c *Controller) OpenAPI(doc *v3.Document) {
-	for path, item := range c.doc.Paths {
-		doc.Paths[path] = item
-	}
-
-	if c.doc.Components != nil && c.doc.Components.Schemas != nil {
-		if doc.Components == nil {
-			doc.Components = &v3.Components{}
-		}
-
-		if doc.Components.Schemas == nil {
-			doc.Components.Schemas = map[string]v3.Schema{}
-		}
-
-		for k, v := range c.doc.Components.Schemas {
-			doc.Components.Schemas[k] = v
-		}
-	}
-
 }
