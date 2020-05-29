@@ -49,7 +49,10 @@ func (s *Server) handle(method, path string, handle Handler) {
 		}
 		err := myHandler(writer, request, wrapRouterParams(params))
 		if err != nil {
-			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			writer.Header().Set("Content-Type", "application/json; charset=utf-8")
+			writer.Header().Set("X-Content-Type-Options", "nosniff")
+			writer.WriteHeader(http.StatusBadRequest)
+			writer.Write(marshalErrByte(err))
 			fmt.Println("error", err)
 		}
 	})
