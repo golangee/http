@@ -18,6 +18,15 @@ type Error struct {
 	Details          interface{} `json:"details,omitempty"`          // Details contains arbitrary payload
 }
 
+// WrapError takes the cause and converts it into an Error for later serialization.
+func WrapError(id string, causedBy error) *Error {
+	msg := id
+	if causedBy != nil {
+		msg = causedBy.Error()
+	}
+	return &Error{Id: id, Message: msg, CausedBy: AsError(causedBy)}
+}
+
 // ParseError tries to parse the response as json. In any case it returns an error.
 func ParseError(reader io.Reader) *Error {
 	buf, err := ioutil.ReadAll(reader)
@@ -67,7 +76,39 @@ func (c *Error) Unwrap() error {
 	return c.CausedBy
 }
 
+func (c *Error) String() string {
+	buf, err2 := json.Marshal(AsError(c))
+	if err2 != nil {
+		return fmt.Errorf("suppressed error by: %w", err2).Error()
+	}
+	return string(buf)
+}
+
+// FindError returns the first occurrence of the error identified by id or nil.
+func FindError(err error, id string) *Error {
+	if err == nil {
+		return nil
+	}
+
+	e := AsError(err)
+	if e.Id == id {
+		return e
+	}
+
+	if e.CausedBy != nil {
+		return FindError(e.CausedBy, id)
+	}
+
+	return nil
+}
+
+// AsError either casts the given error (if possible) or creates a new Error from the given error. Returns only
+// nil if err is nil.
 func AsError(err error) *Error {
+	if err == nil {
+		return nil
+	}
+
 	if e, ok := err.(*Error); ok {
 		return e
 	}
