@@ -150,6 +150,22 @@ func newPathDoc(doc *v3.Document, verb, path string, tag string, method reflectp
 				"application/json": {Schema: toSchema(doc, param.Type)},
 			},
 		}
+
+		op.Responses["400"] = v3.Response{
+			Description: "Bad request is usually returned, if you have missing or wrong formatted parameter.",
+			Content: map[string]v3.MediaType{
+				"application/json": {Schema: errSchema(doc)},
+			},
+		}
+
+		op.Responses["500"] = v3.Response{
+			Description: "Internal Server Error is usually returned, if something went wrong at the server side. " +
+				"If this problem persists, you should contact the support, to get more insight.",
+			Content: map[string]v3.MediaType{
+				"application/json": {Schema: errSchema(doc)},
+			},
+		}
+
 	}
 
 	switch strings.ToUpper(verb) {
@@ -179,6 +195,58 @@ func paramDoc(decl reflectplus.Param) string {
 		doc = strct.Doc
 	}
 	return strings.TrimSpace(doc)
+}
+
+func errSchema(doc *v3.Document) v3.Schema {
+	xtype := "github.com/golangee/http/#Error"
+	ref := "#/components/schemas/Error"
+	s, ok := doc.Components.Schemas["Error"]
+	if !ok {
+		s = v3.Schema{
+			Type: "object",
+			Properties: map[string]v3.Schema{
+				"id": {
+					Type: v3.String,
+					Description: "Id is unique per error category and can be mapped to a specific error case " +
+						"which can be solved in a distinct way.",
+				},
+				"message": {
+					Type: v3.String,
+					Description: "Message helps the developer to understand what was wrong. It should never be used" +
+						" to determine which kind of error happened. Use the Id instead.",
+				},
+				"localizedMessage": {
+					Type: v3.String,
+					Description: "LocalizedMessage is optional and should only be there if it is worth " +
+						"to show it to the user, because it is already translated and offers an understandable " +
+						"explanation or solution.",
+				},
+				"type": {
+					Type: v3.String,
+					Description: "Type helps the developer to understand what is wrong. It represents an implementation " +
+						"details.",
+
+				},
+				"details": {
+					Type: v3.Object,
+					Description: "Details is optional and may contain arbitrary details which are unique for a " +
+						"specific error case. It may contain machine readable information to give a user " +
+						"help to solve the problem.",
+				},
+
+				"causedBy": {
+					Ref: &ref,
+					Description: "CausedBy is optional and may reference another error which is the root " +
+						"of this error. This builds a chain of error to understand the flow and context of the " +
+						"failure better.",
+				},
+			},
+			Description: "Error describes a nested server error, with messages and causes, types and unique ids.",
+			XType:       &xtype,
+		}
+		doc.Components.Schemas["Error"] = s
+	}
+	return v3.Schema{Ref: &ref}
 }
 
 func toSchema(doc *v3.Document, decl reflectplus.TypeDecl) v3.Schema {
