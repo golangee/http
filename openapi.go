@@ -225,7 +225,6 @@ func errSchema(doc *v3.Document) v3.Schema {
 					Type: v3.String,
 					Description: "Type helps the developer to understand what is wrong. It represents an implementation " +
 						"details.",
-
 				},
 				"details": {
 					Type: v3.Object,
@@ -270,6 +269,9 @@ func toSchema(doc *v3.Document, decl reflectplus.TypeDecl) v3.Schema {
 			s.Format = "double"
 		case "string":
 			s.Type = v3.String
+		case "byte":
+			s.Type = v3.String
+			s.Format = "byte" // base64 encoded
 		case "[]":
 			tmp := toSchema(doc, decl.Params[0])
 			s.Type = v3.Array
@@ -281,8 +283,12 @@ func toSchema(doc *v3.Document, decl reflectplus.TypeDecl) v3.Schema {
 		}
 	default:
 		strct := reflectplus.FindStruct(decl.ImportPath, decl.Identifier)
+		var typeDef *reflectplus.TypeDef
 		if strct == nil {
-			panic("return type must be a struct or base type but is " + fmt.Sprintf("%+v", decl))
+			typeDef = reflectplus.FindTypeDef(decl.ImportPath, decl.Identifier)
+			if typeDef == nil {
+				panic("return type must be a struct or base type but is " + fmt.Sprintf("%+v", decl))
+			}
 		}
 		if doc.Components == nil {
 			doc.Components = &v3.Components{Schemas: map[string]v3.Schema{}}
@@ -307,22 +313,40 @@ func toSchema(doc *v3.Document, decl reflectplus.TypeDecl) v3.Schema {
 
 		shortId = uniqueShortId(doc, decl.ImportPath, decl.Identifier)
 		newSpec := v3.Schema{}
-		newSpec.Type = v3.Object
-		newSpec.Description = strct.Doc
 		newSpec.XType = &xid
-		newSpec.Properties = map[string]v3.Schema{}
-		for _, f := range strct.Fields {
-			schema := toSchema(doc, f.Type)
-			schema.Description = f.Doc
-			newSpec.Properties[f.Name] = schema
-		}
+
 		ref := "#/components/schemas/" + shortId
 		s.Ref = &ref
+
+		if strct != nil {
+			finishSchemaAsObj(doc, &newSpec, strct)
+		} else {
+			finishSchemaAsTypeDef(doc, &newSpec, typeDef)
+		}
 
 		doc.Components.Schemas[shortId] = newSpec
 	}
 
 	return s
+}
+
+func finishSchemaAsTypeDef(doc *v3.Document, newSpec *v3.Schema, typeDef *reflectplus.TypeDef) {
+	underlyingTypeSchema := toSchema(doc, typeDef.UnderlyingType)
+	newSpec.Type = underlyingTypeSchema.Type
+	newSpec.Format = underlyingTypeSchema.Format
+	newSpec.Items = underlyingTypeSchema.Items
+	newSpec.Description = typeDef.Doc
+}
+
+func finishSchemaAsObj(doc *v3.Document, newSpec *v3.Schema, strct *reflectplus.Struct) {
+	newSpec.Description = strct.Doc
+	newSpec.Type = v3.Object
+	newSpec.Properties = map[string]v3.Schema{}
+	for _, f := range strct.Fields {
+		schema := toSchema(doc, f.Type)
+		schema.Description = f.Doc
+		newSpec.Properties[f.Name] = schema
+	}
 }
 
 func uniqueShortId(doc *v3.Document, importPath, id string) string {
